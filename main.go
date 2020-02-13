@@ -16,6 +16,10 @@ import (
 	authHttp "github.com/ardiantirta/go-user-management/services/auth/delivery/http"
 	_authRepository "github.com/ardiantirta/go-user-management/services/auth/repository"
 	_authService "github.com/ardiantirta/go-user-management/services/auth/service"
+
+	userHttp "github.com/ardiantirta/go-user-management/services/user/delivery/http"
+	_userRepository "github.com/ardiantirta/go-user-management/services/user/repository"
+	_userService "github.com/ardiantirta/go-user-management/services/user/service"
 )
 
 func init() {
@@ -52,6 +56,10 @@ func main() {
 	authRepository := _authRepository.NewPgsqlAuthRepository(dbConn)
 	authService := _authService.NewAuthService(authRepository)
 	authHttp.NewAuthHandler(r, authService)
+
+	userRepository := _userRepository.NewUserRepository(dbConn)
+	userService := _userService.NewUserService(userRepository)
+	userHttp.NewUserHandler(r, userService)
 
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization", "X-API-ClientID"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})

@@ -32,6 +32,7 @@ func DBConnection() *gorm.DB {
 		&models.User{},
 		&models.UserVerificationCode{},
 		&models.UserToken{},
+		&models.BackUpCode{},
 	)
 
 	return dbConn

@@ -1,11 +1,15 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ardiantirta/go-user-management/helper"
+	"github.com/ardiantirta/go-user-management/middleware"
 	"github.com/ardiantirta/go-user-management/models"
 	"github.com/ardiantirta/go-user-management/services/auth"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"time"
 )
 
 type AuthService struct {
@@ -82,8 +86,38 @@ func (a *AuthService) Login(email, password string) (map[string]interface{}, err
 	return response, nil
 }
 
-func (a *AuthService) TwoFactorAuthVerify() (map[string]interface{}, error) {
-	panic("implement me")
+func (a *AuthService) TwoFactorAuthVerify(id int, code string) (map[string]interface{}, error) {
+	currentUser, err := a.AuthRepository.FetchUserByID(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if currentUser.TFACode != code {
+		err := errors.New("wrong code")
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	userToken, err := a.AuthRepository.FetchUserToken(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	claims, err := middleware.VerifyToken(userToken.Token)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	exp := claims.(jwt.MapClaims)["exp"].(float64)
+	expiredAt := time.Unix(int64(exp), 0)
+	expiredAtStr := expiredAt.Format("2006-01-02T15:04:05Z")
+
+	return map[string]interface{}{
+		"access_token": map[string]interface{} {
+			"value": userToken.Token,
+			"type": userToken.Type,
+			"expired_at": expiredAtStr,
+		},
+	}, nil
 }
 
 func (a *AuthService) TwoFactorAuthByPass() (map[string]interface{}, error) {

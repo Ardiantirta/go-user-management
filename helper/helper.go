@@ -1,12 +1,16 @@
 package helper
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/ardiantirta/go-user-management/models"
 	"github.com/google/uuid"
+	"github.com/skip2/go-qrcode"
 	"github.com/spf13/viper"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -18,9 +22,36 @@ func Response(w http.ResponseWriter, data map[string]interface{}) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-func GenerateVerificationCode() string {
+func ErrorMessage(code int, message string) map[string]interface{} {
+	return map[string]interface{}{
+		"code": code,
+		"message": message,
+	}
+}
+
+func GenerateRandomCode() string {
 	code := uuid.New().String()
 	return code
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyz" +
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+
+func GenerateSecretCode(length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func GenerateQRCode(content string) string {
+	var png []byte
+	png, _ = qrcode.Encode(content, qrcode.Medium, 256)
+	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(png)
 }
 
 func SendVerificationByEmail(sgEmail *models.SendGridEmail) error {

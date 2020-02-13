@@ -2,23 +2,46 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1ae2466f-d9a2-49db-bbb5-931b83019526" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config-example.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/form.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/others.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/table.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/user/delivery/http/user_handler.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/user/repository/pgsql_user.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/user/service/user_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helper/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/helper/helper.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/middleware/auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/middleware/auth.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/user.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/delivery/http/auth_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/delivery/http/auth_handler.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/repository.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/repository/pgsql_auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/repository/pgsql_auth.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/auth/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/service/auth_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/service/auth_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/user/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/user/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/setup/database.go" beforeDir="false" afterPath="$PROJECT_DIR$/setup/database.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -73,15 +96,15 @@
       <screen x="0" y="0" width="1280" height="680" />
     </state>
     <state x="142" y="0" key="SettingsEditor/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581489816662" />
-    <state x="334" y="72" width="612" height="536" key="find.popup" timestamp="1581564487738">
+    <state x="334" y="72" width="612" height="536" key="find.popup" timestamp="1581616549326">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581564487738" />
-    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680@0.0.1280.680" timestamp="1581522365644" />
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup" timestamp="1581565868399">
+    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581579324296" />
+    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680@0.0.1280.680" timestamp="1581616549326" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup" timestamp="1581614379668">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581565868399" />
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680@0.0.1280.680" timestamp="1581519861131" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581589829555" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680@0.0.1280.680" timestamp="1581614379668" />
   </component>
 </project>

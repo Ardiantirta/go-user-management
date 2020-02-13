@@ -47,9 +47,11 @@ func JwtAuthentication(next http.Handler) http.Handler {
 
 		id := claims.(jwt.MapClaims)["id"].(float64)
 		email := claims.(jwt.MapClaims)["email"].(string)
+		isTFA := claims.(jwt.MapClaims)["is_tfa"].(bool)
 
 		r.Header.Set("id", strconv.Itoa(int(id)))
 		r.Header.Set("email", email)
+		r.Header.Set("is_tfa", strconv.FormatBool(isTFA))
 
 		next.ServeHTTP(w, r)
 	})

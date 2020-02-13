@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type AuthHandler struct {
@@ -28,8 +29,8 @@ func NewAuthHandler(r *mux.Router, authService auth.Service) {
 	v1.Handle("/verification/send", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.SendVerificationCode))).Methods(http.MethodPost)
 	v1.Handle("/verification/{code}", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.Verification))).Methods(http.MethodPost)
 	v1.Handle("/login", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.Login))).Methods(http.MethodPost)
-	v1.Handle("/tfa/verify", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.TwoFactorAuthVerify))).Methods(http.MethodPost)
-	v1.Handle("/tfa/bypass", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.TwoFactorAuthByPass))).Methods(http.MethodPost)
+	v1.Handle("/tfa/verify", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.TwoFactorAuthVerify)))).Methods(http.MethodPost)
+	v1.Handle("/tfa/bypass", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.TwoFactorAuthByPass)))).Methods(http.MethodPost)
 	v1.Handle("/password/forgot", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.ForgotPassword))).Methods(http.MethodPost)
 	v1.Handle("/password/reset", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(handler.ResetPassword))).Methods(http.MethodPost)
 }
@@ -92,7 +93,7 @@ func (a *AuthHandler) Verification(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	auth := new(models.Authentication)
+	auth := new(models.AuthenticationForm)
 
 	if err := json.NewDecoder(r.Body).Decode(&auth); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -109,7 +110,34 @@ func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthHandler) TwoFactorAuthVerify(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.Header.Get("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		helper.Response(w, helper.ErrorMessage(0, "something is missing, please re-login"))
+		return
+	}
 
+	formData := new(models.VerifyTFAForm)
+
+	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
+		return
+	}
+
+	if len(formData.Code) != 6 {
+		w.WriteHeader(http.StatusBadRequest)
+		helper.Response(w, helper.ErrorMessage(0, "wrong code, try again"))
+		return
+	}
+
+	response, err := a.AuthService.TwoFactorAuthVerify(id, formData.Code)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	helper.Response(w, response)
+	return
 }
 
 func (a *AuthHandler) TwoFactorAuthByPass(w http.ResponseWriter, r *http.Request) {

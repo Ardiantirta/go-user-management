@@ -20,7 +20,7 @@ type PgsqlAuthRepository struct {
 	Conn *gorm.DB
 }
 
-func (p *PgsqlAuthRepository) Validate(req *models.RegisterForm) (map[string]interface{}, bool) {
+func (p PgsqlAuthRepository) Validate(req *models.RegisterForm) (map[string]interface{}, bool) {
 	validate := validator.New()
 
 	if err := validate.Var(req.FullName, "required,min=1,max=128"); err != nil {
@@ -44,18 +44,17 @@ func (p *PgsqlAuthRepository) Validate(req *models.RegisterForm) (map[string]int
 	if err := p.Conn.Table("users").
 		Where("lower(email) = ?", strings.ToLower(req.Email)).
 		First(&temp).Error; err != nil && err != gorm.ErrRecordNotFound {
-			return map[string]interface{}{"code": 0, "message": "connection error. please retry"}, false
+		return map[string]interface{}{"code": 0, "message": "connection error. please retry"}, false
 	}
 
 	if temp.Email != "" {
 		return map[string]interface{}{"code": 0, "message": "email already exist"}, false
 	}
 
-
 	return nil, true
 }
 
-func (p *PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, *models.UserVerificationCode, error) {
+func (p PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, *models.UserVerificationCode, error) {
 	if resp, ok := p.Validate(req); !ok {
 		return nil, nil, errors.New(resp["message"].(string))
 	}
@@ -68,6 +67,8 @@ func (p *PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, 
 	user.FullName = req.FullName
 	user.IsVerified = 0
 	user.IsActive = 0
+	user.IsTFA = 0
+	user.TFAActivation = nil
 
 	if err := p.Conn.Create(&user).Error; err != nil {
 		return nil, nil, errors.New("error when create user")
@@ -75,7 +76,7 @@ func (p *PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, 
 
 	verificationCode := new(models.UserVerificationCode)
 	verificationCode.UserID = int(user.ID)
-	verificationCode.Code = helper.GenerateVerificationCode()
+	verificationCode.Code = helper.GenerateRandomCode()
 	verificationCode.IsUsed = 0
 
 	if err := p.Conn.Create(&verificationCode).Error; err != nil {
@@ -85,39 +86,48 @@ func (p *PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, 
 	return user, verificationCode, nil
 }
 
-func (p *PgsqlAuthRepository) Verification(params map[string]interface{}) error {
+func (p PgsqlAuthRepository) Verification(params map[string]interface{}) error {
 	verificationCode := new(models.UserVerificationCode)
 
 	code := params["verification_code"].(string)
 
-	if err := p.Conn.Table("user_verification_codes").
+	result := p.Conn.Table("user_verification_codes").
 		Where("code = ?", code).
-		First(&verificationCode).
-		Update("is_used", 1).Error; err != nil {
-			return errors.New("verification failed")
+		First(&verificationCode)
+
+	if err := result.Error; err != nil {
+		return errors.New("verification code not found")
+	}
+
+	if verificationCode.IsUsed == 1 {
+		return errors.New("verification code is already used")
+	}
+
+	if err := result.Update("is_used", 1).Error; err != nil {
+		return errors.New("verification failed")
 	}
 
 	if err := p.Conn.Table("users").
 		Where("id = ?", verificationCode.UserID).
 		Updates(map[string]interface{}{"is_verified": 1, "is_active": 1}).Error; err != nil {
-			return errors.New("verification failed")
+		return errors.New("verification failed")
 	}
 
 	return nil
 }
 
-func (p *PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, *models.UserVerificationCode, error) {
+func (p PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, *models.UserVerificationCode, error) {
 	user := new(models.User)
 
 	if err := p.Conn.Table("users").
 		Where("lower(email) = ?", email).
 		First(&user).Error; err != nil {
-			return nil, nil, errors.New("")
+		return nil, nil, errors.New("")
 	}
 
 	verificationCode := new(models.UserVerificationCode)
 	verificationCode.UserID = int(user.ID)
-	verificationCode.Code = helper.GenerateVerificationCode()
+	verificationCode.Code = helper.GenerateRandomCode()
 	verificationCode.IsUsed = 0
 
 	if err := p.Conn.Create(&verificationCode).Error; err != nil {
@@ -127,25 +137,35 @@ func (p *PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, 
 	return user, verificationCode, nil
 }
 
-func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interface{}, error) {
+func (p PgsqlAuthRepository) Login(email, password string) (map[string]interface{}, error) {
 	user := new(models.User)
 
-	if err := p.Conn.Table("users").
-		Where("lower(email) = ? and is_active = ?", email, 1).
-		First(&user).Error; err != nil {
-			return nil, errors.New("user not found")
+	result := p.Conn.Table("users").
+		Where("lower(email) = ? ", email).
+		First(&user)
+	if err := result.Error; err != nil {
+		return nil, errors.New("user not found")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password));
-		err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+	if err := result.Where("is_active = ?", 1).First(&user).Error; err != nil {
+		return nil, errors.New("please verify your email")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
 		return nil, errors.New("invalid login credentials, please try again")
+	}
+
+	isTfa := false
+	if user.IsTFA == 1 {
+		isTfa = true
 	}
 
 	expiredAt := time.Now().UTC().AddDate(0, 0, 7)
 	signKey := []byte(viper.GetString("jwt.signkey"))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.CustomClaims{
-		ID:             int(user.ID),
-		Email:          user.Email,
+		ID:    int(user.ID),
+		Email: user.Email,
+		IsTFA: isTfa,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredAt.Unix(),
 		},
@@ -160,30 +180,22 @@ func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interfac
 	if err := p.Conn.Table("user_tokens").
 		Where("user_id = ? and token = ?", userToken.UserID, userToken.Token).
 		FirstOrCreate(&userToken).Error; err != nil {
-			return nil, errors.New("create token failed")
+		return nil, errors.New("create token failed")
 	}
 
 	strExpiredAt := expiredAt.Format("2006-01-02T15:04:05Z")
 
 	return map[string]interface{}{
-		"require_tfa": false,
+		"require_tfa": isTfa,
 		"access_token": map[string]interface{}{
-			"value": userToken.Token,
-			"type": userToken.Type,
+			"value":      userToken.Token,
+			"type":       userToken.Type,
 			"expired_at": strExpiredAt,
 		},
 	}, nil
 }
 
-func (p *PgsqlAuthRepository) TwoFactorAuthVerify() (map[string]interface{}, error) {
-	panic("implement me")
-}
-
-func (p *PgsqlAuthRepository) TwoFactorAuthByPass() (map[string]interface{}, error) {
-	panic("implement me")
-}
-
-func (p *PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string, error) {
+func (p PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string, error) {
 	user := new(models.User)
 
 	if err := p.Conn.Table("users").
@@ -191,14 +203,20 @@ func (p *PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string
 		Where("is_verified = ?", 1).
 		Where("is_active = ?", 1).
 		First(&user).Error; err != nil {
-			return nil, "", errors.New("user not found")
+		return nil, "", errors.New("user not found")
+	}
+
+	isTfa := false
+	if user.IsTFA == 1 {
+		isTfa = true
 	}
 
 	expiredAt := time.Now().UTC().AddDate(0, 0, 7)
 	signKey := []byte(viper.GetString("jwt.signkey"))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.CustomClaims{
-		ID:             int(user.ID),
-		Email:          user.Email,
+		ID:    int(user.ID),
+		Email: user.Email,
+		IsTFA: isTfa,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredAt.Unix(),
 		},
@@ -209,7 +227,7 @@ func (p *PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string
 	return user, tokenString, nil
 }
 
-func (p *PgsqlAuthRepository) ResetPassword(email, password string) (map[string]interface{}, error) {
+func (p PgsqlAuthRepository) ResetPassword(email, password string) (map[string]interface{}, error) {
 	user := new(models.User)
 
 	fmt.Println(email, password)
@@ -229,6 +247,30 @@ func (p *PgsqlAuthRepository) ResetPassword(email, password string) (map[string]
 	}
 
 	return map[string]interface{}{"status": true}, nil
+}
+
+func (p PgsqlAuthRepository) FetchUserByID(id int) (*models.User, error) {
+	user := new(models.User)
+
+	if err := p.Conn.Table("users").
+		Where("id = ?", id).
+		First(&user).Error; err != nil {
+			return nil, errors.New("user not found")
+	}
+
+	return user, nil
+}
+
+func (p PgsqlAuthRepository) FetchUserToken(userId int) (*models.UserToken, error) {
+	token := new(models.UserToken)
+
+	if err := p.Conn.Table("user_tokens").
+		Where("user_id = ?", userId).
+		First(&token).Error; err != nil {
+			return nil, errors.New("get token failed")
+	}
+
+	return token, nil
 }
 
 func NewPgsqlAuthRepository(conn *gorm.DB) auth.Repository {
