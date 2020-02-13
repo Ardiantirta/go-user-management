@@ -1,0 +1,19 @@
+{
+  "debug": true,
+  "server": {
+    "address": ":3000"
+  },
+  "database": {
+    "host": "localhost",
+    "port": "15432",
+    "user": "postgres",
+    "pass": "example-1",
+    "name": "postgres"
+  },
+  "sendgrid": {
+    "api": "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"
+  },
+  "jwt": {
+    "sign_key": "signkey1"
+  }
+}
