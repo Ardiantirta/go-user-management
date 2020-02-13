@@ -3,7 +3,6 @@ package helper
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/ardiantirta/go-user-management/models"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
@@ -24,12 +23,12 @@ func GenerateVerificationCode() string {
 	return code
 }
 
-func SendVerificationByEmail(user *models.User, verificationCode string) error {
-	from := mail.NewEmail("Example User", "test@example.com")
-	subject := "Email Verification: user-management-go"
-	to := mail.NewEmail(user.FullName, user.Email)
-	plainContent := "Please verify your email"
-	htmlContent := fmt.Sprintf(`<a href="localhost:3000/auth/verification/%s">verify here</a>`, verificationCode)
+func SendVerificationByEmail(sgEmail *models.SendGridEmail) error {
+	from := sgEmail.From
+	subject := sgEmail.Subject
+	to := sgEmail.To
+	plainContent := sgEmail.PlainContent
+	htmlContent := sgEmail.HtmlContent
 	message := mail.NewSingleEmail(from, subject, to, plainContent, htmlContent)
 	client := sendgrid.NewSendClient(viper.GetString("sendgrid.api"))
 	_, err := client.Send(message)

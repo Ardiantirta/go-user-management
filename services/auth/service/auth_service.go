@@ -1,9 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"github.com/ardiantirta/go-user-management/helper"
 	"github.com/ardiantirta/go-user-management/models"
 	"github.com/ardiantirta/go-user-management/services/auth"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 type AuthService struct {
@@ -16,9 +18,19 @@ func (a *AuthService) Register(req *models.RegisterForm) (map[string]interface{}
 		return map[string]interface{}{"code": 0, "message": err.Error()}, err
 	}
 
-	if err := helper.SendVerificationByEmail(user, verificationCode.Code); err != nil {
+	sg := new(models.SendGridEmail)
+	sg.From = mail.NewEmail("User Example 1", "user1@example.com")
+	sg.To = mail.NewEmail(user.FullName, user.Email)
+	sg.Subject = "Email Verification: user-management-go"
+	sg.PlainContent = "Please verify your email"
+	sg.HtmlContent = fmt.Sprintf(`<a href="localhost:3000/auth/verification/%s">verify here</a>`, verificationCode)
+	if err := helper.SendVerificationByEmail(sg); err != nil {
 		return map[string]interface{}{"code": 0, "message": err.Error()}, err
 	}
+
+	//go func() {
+	//	_ = helper.SendVerificationByEmail(user, verificationCode.Code)
+	//}()
 
 	mapResponse := map[string]interface{}{"status": true}
 	return mapResponse, nil
@@ -32,6 +44,33 @@ func (a *AuthService) Verification(params map[string]interface{}) (map[string]in
 
 	mapResponse := map[string]interface{}{"status": true}
 	return mapResponse, nil
+}
+
+func (a *AuthService) SendVerificationCode(params map[string]interface{}) (map[string]interface{}, error) {
+	emailType := params["type"].(string)
+	recipient := params["recipient"].(string)
+
+	user, verificationCode, err := a.AuthRepository.SendVerificationCode(recipient)
+	if err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	sg := new(models.SendGridEmail)
+	sg.From = mail.NewEmail("User Example 1", "user1@example.com")
+	sg.To = mail.NewEmail(user.FullName, user.Email)
+	switch emailType {
+	case "email.verify":
+		sg.Subject = "Email Verification: user-management-go"
+	default:
+		sg.Subject = "hello from user-management-go"
+	}
+	sg.PlainContent = "Please verify your email"
+	sg.HtmlContent = fmt.Sprintf(`<a href="localhost:3000/auth/verification/%s">verify here</a>`, verificationCode)
+	if err := helper.SendVerificationByEmail(sg); err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	return map[string]interface{}{"status": true}, nil
 }
 
 func (a *AuthService) Login(email, password string) (map[string]interface{}, error) {
@@ -51,12 +90,37 @@ func (a *AuthService) TwoFactorAuthByPass() (map[string]interface{}, error) {
 	panic("implement me")
 }
 
-func (a *AuthService) ForgotPassword() (map[string]interface{}, error) {
-	panic("implement me")
+func (a *AuthService) ForgotPassword(email string) (map[string]interface{}, error) {
+	user, token, err := a.AuthRepository.ForgotPassword(email)
+	if err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	sg := new(models.SendGridEmail)
+	sg.From = mail.NewEmail("User Example 1", "user1@example.com")
+	sg.To = mail.NewEmail(user.FullName, user.Email)
+	sg.Subject = "Forgot Password Token"
+	sg.PlainContent = "here is you reset password token"
+	sg.HtmlContent = token
+	if err := helper.SendVerificationByEmail(sg); err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	//go func() {
+	//	_ = helper.SendVerificationByEmail(user, verificationCode.Code)
+	//}()
+
+	mapResponse := map[string]interface{}{"status": true, "token": token}
+	return mapResponse, nil
 }
 
-func (a *AuthService) ResetPassword() (map[string]interface{}, error) {
-	panic("implement me")
+func (a *AuthService) ResetPassword(email, password string) (map[string]interface{}, error) {
+	response, err := a.AuthRepository.ResetPassword(email, password)
+	if err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	return response, nil
 }
 
 func NewAuthService(authRepository auth.Repository) auth.Service {

@@ -106,6 +106,27 @@ func (p *PgsqlAuthRepository) Verification(params map[string]interface{}) error 
 	return nil
 }
 
+func (p *PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, *models.UserVerificationCode, error) {
+	user := new(models.User)
+
+	if err := p.Conn.Table("users").
+		Where("lower(email) = ?", email).
+		First(&user).Error; err != nil {
+			return nil, nil, errors.New("")
+	}
+
+	verificationCode := new(models.UserVerificationCode)
+	verificationCode.UserID = int(user.ID)
+	verificationCode.Code = helper.GenerateVerificationCode()
+	verificationCode.IsUsed = 0
+
+	if err := p.Conn.Create(&verificationCode).Error; err != nil {
+		return nil, nil, errors.New("error when create verification code")
+	}
+
+	return user, verificationCode, nil
+}
+
 func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interface{}, error) {
 	user := new(models.User)
 
@@ -115,11 +136,9 @@ func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interfac
 			return nil, errors.New("user not found")
 	}
 
-	if user.ID > 0 {
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password));
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password));
 		err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-			return nil, errors.New("invalid login credentials, please try again")
-		}
+		return nil, errors.New("invalid login credentials, please try again")
 	}
 
 	expiredAt := time.Now().UTC().AddDate(0, 0, 7)
@@ -133,7 +152,6 @@ func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interfac
 	})
 
 	tokenString, _ := token.SignedString(signKey)
-	fmt.Println(tokenString)
 
 	userToken := new(models.UserToken)
 	userToken.Type = "Bearer"
@@ -155,23 +173,62 @@ func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interfac
 			"expired_at": strExpiredAt,
 		},
 	}, nil
-
 }
 
-func (p *PgsqlAuthRepository) TwoFactorAuthVerify() error {
+func (p *PgsqlAuthRepository) TwoFactorAuthVerify() (map[string]interface{}, error) {
 	panic("implement me")
 }
 
-func (p *PgsqlAuthRepository) TwoFactorAuthByPass() error {
+func (p *PgsqlAuthRepository) TwoFactorAuthByPass() (map[string]interface{}, error) {
 	panic("implement me")
 }
 
-func (p *PgsqlAuthRepository) ForgotPassword() error {
-	panic("implement me")
+func (p *PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string, error) {
+	user := new(models.User)
+
+	if err := p.Conn.Table("users").
+		Where("lower(email) = ?", strings.ToLower(email)).
+		Where("is_verified = ?", 1).
+		Where("is_active = ?", 1).
+		First(&user).Error; err != nil {
+			return nil, "", errors.New("user not found")
+	}
+
+	expiredAt := time.Now().UTC().AddDate(0, 0, 7)
+	signKey := []byte(viper.GetString("jwt.signkey"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.CustomClaims{
+		ID:             int(user.ID),
+		Email:          user.Email,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiredAt.Unix(),
+		},
+	})
+
+	tokenString, _ := token.SignedString(signKey)
+
+	return user, tokenString, nil
 }
 
-func (p *PgsqlAuthRepository) ResetPassword() error {
-	panic("implement me")
+func (p *PgsqlAuthRepository) ResetPassword(email, password string) (map[string]interface{}, error) {
+	user := new(models.User)
+
+	fmt.Println(email, password)
+
+	result := p.Conn.Table("users").
+		Where("lower(email) = ?", strings.ToLower(email)).
+		First(&user)
+
+	if err := result.Error; err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err := result.Update("password", hashedPassword).Error; err != nil {
+		return nil, errors.New("reset password failed")
+	}
+
+	return map[string]interface{}{"status": true}, nil
 }
 
 func NewPgsqlAuthRepository(conn *gorm.DB) auth.Repository {
