@@ -66,7 +66,20 @@ func (a *AuthHandler) Verification(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	auth := new(models.Authentication)
 
+	if err := json.NewDecoder(r.Body).Decode(&auth); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		helper.Response(w, map[string]interface{}{"code": 0, "message": "Invalid json body"})
+	}
+
+	response, err := a.AuthService.Login(auth.Email, auth.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	helper.Response(w, response)
+	return
 }
 
 func (a *AuthHandler) TwoFactorAuthVerify(w http.ResponseWriter, r *http.Request) {

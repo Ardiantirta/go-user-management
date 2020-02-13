@@ -35,7 +35,12 @@ func (a *AuthService) Verification(params map[string]interface{}) (map[string]in
 }
 
 func (a *AuthService) Login(email, password string) (map[string]interface{}, error) {
-	panic("implement me")
+	response, err := a.AuthRepository.Login(email, password)
+	if err != nil {
+		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+	}
+
+	return response, nil
 }
 
 func (a *AuthService) TwoFactorAuthVerify() (map[string]interface{}, error) {

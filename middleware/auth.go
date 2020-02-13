@@ -12,7 +12,7 @@ import (
 )
 
 func VerifyToken(tokenString string) (jwt.Claims, error) {
-	signKey := []byte(viper.GetString("jwt.sign_key"))
+	signKey := []byte(viper.GetString("jwt.signkey"))
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
 		return signKey, err
 	})
@@ -46,12 +46,10 @@ func JwtAuthentication(next http.Handler) http.Handler {
 		}
 
 		id := claims.(jwt.MapClaims)["id"].(float64)
-		fullname := claims.(jwt.MapClaims)["fullname"].(string)
 		email := claims.(jwt.MapClaims)["email"].(string)
 
 		r.Header.Set("id", strconv.Itoa(int(id)))
 		r.Header.Set("email", email)
-		r.Header.Set("fullname", fullname)
 
 		next.ServeHTTP(w, r)
 	})

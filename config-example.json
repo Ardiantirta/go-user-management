@@ -11,9 +11,9 @@
     "name": "postgres"
   },
   "sendgrid": {
-    "api": "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"
+    "api": "{{sendgrid-api}}"
   },
   "jwt": {
-    "signkey": "signkey1"
+    "signkey": "{{jwt-signkey}}"
   }
 }

@@ -2,11 +2,15 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ardiantirta/go-user-management/helper"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/gorm"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
+	"time"
 
 	"github.com/ardiantirta/go-user-management/models"
 	"github.com/ardiantirta/go-user-management/services/auth"
@@ -62,8 +66,8 @@ func (p *PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, 
 	user.Password = string(hashedPassword)
 	user.Email = strings.ToLower(req.Email)
 	user.FullName = req.FullName
-	user.IsRegistered = 0
-	user.IsActivated = 0
+	user.IsVerified = 0
+	user.IsActive = 0
 
 	if err := p.Conn.Create(&user).Error; err != nil {
 		return nil, nil, errors.New("error when create user")
@@ -95,15 +99,63 @@ func (p *PgsqlAuthRepository) Verification(params map[string]interface{}) error 
 
 	if err := p.Conn.Table("users").
 		Where("id = ?", verificationCode.UserID).
-		Update("is_registered", 1).Error; err != nil {
-			return errors.New("verification failed 2")
+		Updates(map[string]interface{}{"is_verified": 1, "is_active": 1}).Error; err != nil {
+			return errors.New("verification failed")
 	}
 
 	return nil
 }
 
-func (p *PgsqlAuthRepository) Login(email, password string) (*models.User, error) {
-	panic("implement me")
+func (p *PgsqlAuthRepository) Login(email, password string) (map[string]interface{}, error) {
+	user := new(models.User)
+
+	if err := p.Conn.Table("users").
+		Where("lower(email) = ? and is_active = ?", email, 1).
+		First(&user).Error; err != nil {
+			return nil, errors.New("user not found")
+	}
+
+	if user.ID > 0 {
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password));
+		err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+			return nil, errors.New("invalid login credentials, please try again")
+		}
+	}
+
+	expiredAt := time.Now().UTC().AddDate(0, 0, 7)
+	signKey := []byte(viper.GetString("jwt.signkey"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.CustomClaims{
+		ID:             int(user.ID),
+		Email:          user.Email,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiredAt.Unix(),
+		},
+	})
+
+	tokenString, _ := token.SignedString(signKey)
+	fmt.Println(tokenString)
+
+	userToken := new(models.UserToken)
+	userToken.Type = "Bearer"
+	userToken.Token = tokenString
+	userToken.UserID = int(user.ID)
+	if err := p.Conn.Table("user_tokens").
+		Where("user_id = ? and token = ?", userToken.UserID, userToken.Token).
+		FirstOrCreate(&userToken).Error; err != nil {
+			return nil, errors.New("create token failed")
+	}
+
+	strExpiredAt := expiredAt.Format("2006-01-02T15:04:05Z")
+
+	return map[string]interface{}{
+		"require_tfa": false,
+		"access_token": map[string]interface{}{
+			"value": userToken.Token,
+			"type": userToken.Type,
+			"expired_at": strExpiredAt,
+		},
+	}, nil
+
 }
 
 func (p *PgsqlAuthRepository) TwoFactorAuthVerify() error {

@@ -31,6 +31,7 @@ func DBConnection() *gorm.DB {
 	dbConn.Debug().AutoMigrate(
 		&models.User{},
 		&models.UserVerificationCode{},
+		&models.UserToken{},
 	)
 
 	return dbConn
