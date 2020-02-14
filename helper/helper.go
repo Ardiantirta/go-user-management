@@ -18,7 +18,6 @@ import (
 
 func Response(w http.ResponseWriter, data map[string]interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-API-ClientID", "{{APIClientID}}")
 	_ = json.NewEncoder(w).Encode(data)
 }
 

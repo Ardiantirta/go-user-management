@@ -39,19 +39,69 @@ func JwtAuthentication(next http.Handler) http.Handler {
 		tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 		claims, err := VerifyToken(tokenString)
 		if err != nil {
-			response = map[string]interface{}{"code": 0, "message": "invalid auth token"}
 			w.WriteHeader(http.StatusForbidden)
-			helper.Response(w, response)
+			helper.Response(w, helper.ErrorMessage(0, "invalid auth token"))
 			return
 		}
 
 		id := claims.(jwt.MapClaims)["id"].(float64)
 		email := claims.(jwt.MapClaims)["email"].(string)
 		isTFA := claims.(jwt.MapClaims)["is_tfa"].(bool)
+		code := claims.(jwt.MapClaims)["code"].(string)
 
 		r.Header.Set("id", strconv.Itoa(int(id)))
 		r.Header.Set("email", email)
 		r.Header.Set("is_tfa", strconv.FormatBool(isTFA))
+		r.Header.Set("code", code)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func CheckClientID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientKey := viper.GetString("client.key")
+		apiClientID := r.Header.Get("X-API-ClientID")
+
+		if len(apiClientID) < 1 {
+			w.WriteHeader(http.StatusForbidden)
+			helper.Response(w, helper.ErrorMessage(0, "please provide X-API-ClientID"))
+			return
+		}
+
+		if apiClientID != clientKey {
+			w.WriteHeader(http.StatusBadRequest)
+			helper.Response(w, helper.ErrorMessage(0, "wrong X-API-ClientID"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func TwoFactorAuthentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		isTfa, err := strconv.ParseBool(r.Header.Get("is_tfa"))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			helper.Response(w, helper.ErrorMessage(0, "something is missing, please re-login"))
+			return
+		}
+
+		code := r.Header.Get("code")
+
+		canAccess := false
+		if isTfa == true && len(code) == 6 {
+			canAccess = true
+		} else if isTfa == false {
+			canAccess = true
+		}
+
+		if !canAccess {
+			w.WriteHeader(http.StatusBadRequest)
+			helper.Response(w, helper.ErrorMessage(0, "Please Verify Two Factor Authentication"))
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})

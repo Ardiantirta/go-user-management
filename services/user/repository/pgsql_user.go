@@ -83,6 +83,18 @@ func (u UserRepository) DeleteBackUpCode(id int) error {
 	return nil
 }
 
+func (u UserRepository) DeleteUser(user *models.User) error {
+	panic("implement me")
+}
+
+func (u UserRepository) DeleteUserToken(id int) error {
+	panic("implement me")
+}
+
+func (u UserRepository) DeleteBackUpCodes(id int) error {
+	panic("implement me")
+}
+
 func NewUserRepository(conn *gorm.DB) user.Repository {
 	return &UserRepository{
 		Conn: conn,

@@ -16,11 +16,11 @@ import (
 	"github.com/ardiantirta/go-user-management/services/auth"
 )
 
-type PgsqlAuthRepository struct {
+type AuthRepository struct {
 	Conn *gorm.DB
 }
 
-func (p PgsqlAuthRepository) Validate(req *models.RegisterForm) (map[string]interface{}, bool) {
+func (p AuthRepository) Validate(req *models.RegisterForm) (map[string]interface{}, bool) {
 	validate := validator.New()
 
 	if err := validate.Var(req.FullName, "required,min=1,max=128"); err != nil {
@@ -54,7 +54,7 @@ func (p PgsqlAuthRepository) Validate(req *models.RegisterForm) (map[string]inte
 	return nil, true
 }
 
-func (p PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, *models.UserVerificationCode, error) {
+func (p AuthRepository) Register(req *models.RegisterForm) (*models.User, *models.UserVerificationCode, error) {
 	if resp, ok := p.Validate(req); !ok {
 		return nil, nil, errors.New(resp["message"].(string))
 	}
@@ -86,7 +86,7 @@ func (p PgsqlAuthRepository) Register(req *models.RegisterForm) (*models.User, *
 	return user, verificationCode, nil
 }
 
-func (p PgsqlAuthRepository) Verification(params map[string]interface{}) error {
+func (p AuthRepository) Verification(params map[string]interface{}) error {
 	verificationCode := new(models.UserVerificationCode)
 
 	code := params["verification_code"].(string)
@@ -116,7 +116,7 @@ func (p PgsqlAuthRepository) Verification(params map[string]interface{}) error {
 	return nil
 }
 
-func (p PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, *models.UserVerificationCode, error) {
+func (p AuthRepository) SendVerificationCode(email string) (*models.User, *models.UserVerificationCode, error) {
 	user := new(models.User)
 
 	if err := p.Conn.Table("users").
@@ -137,7 +137,7 @@ func (p PgsqlAuthRepository) SendVerificationCode(email string) (*models.User, *
 	return user, verificationCode, nil
 }
 
-func (p PgsqlAuthRepository) Login(email, password string) (map[string]interface{}, error) {
+func (p AuthRepository) Login(email, password string) (map[string]interface{}, error) {
 	user := new(models.User)
 
 	result := p.Conn.Table("users").
@@ -166,6 +166,7 @@ func (p PgsqlAuthRepository) Login(email, password string) (map[string]interface
 		ID:    int(user.ID),
 		Email: user.Email,
 		IsTFA: isTfa,
+		Code: "",
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredAt.Unix(),
 		},
@@ -195,7 +196,7 @@ func (p PgsqlAuthRepository) Login(email, password string) (map[string]interface
 	}, nil
 }
 
-func (p PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string, error) {
+func (p AuthRepository) ForgotPassword(email string) (*models.User, string, error) {
 	user := new(models.User)
 
 	if err := p.Conn.Table("users").
@@ -217,6 +218,7 @@ func (p PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string,
 		ID:    int(user.ID),
 		Email: user.Email,
 		IsTFA: isTfa,
+		Code: "",
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredAt.Unix(),
 		},
@@ -227,7 +229,7 @@ func (p PgsqlAuthRepository) ForgotPassword(email string) (*models.User, string,
 	return user, tokenString, nil
 }
 
-func (p PgsqlAuthRepository) ResetPassword(email, password string) (map[string]interface{}, error) {
+func (p AuthRepository) ResetPassword(email, password string) (map[string]interface{}, error) {
 	user := new(models.User)
 
 	fmt.Println(email, password)
@@ -249,7 +251,7 @@ func (p PgsqlAuthRepository) ResetPassword(email, password string) (map[string]i
 	return map[string]interface{}{"status": true}, nil
 }
 
-func (p PgsqlAuthRepository) FetchUserByID(id int) (*models.User, error) {
+func (p AuthRepository) FetchUserByID(id int) (*models.User, error) {
 	user := new(models.User)
 
 	if err := p.Conn.Table("users").
@@ -261,7 +263,7 @@ func (p PgsqlAuthRepository) FetchUserByID(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (p PgsqlAuthRepository) FetchUserToken(userId int) (*models.UserToken, error) {
+func (p AuthRepository) FetchUserTokenByUserID(userId int) (*models.UserToken, error) {
 	token := new(models.UserToken)
 
 	if err := p.Conn.Table("user_tokens").
@@ -273,8 +275,30 @@ func (p PgsqlAuthRepository) FetchUserToken(userId int) (*models.UserToken, erro
 	return token, nil
 }
 
+func (p AuthRepository) SaveUserToken(token *models.UserToken) error {
+	if err := p.Conn.Table("user_tokens").
+		Where("user_id = ?", token.ID).
+		Save(&token).Error; err != nil {
+			return errors.New("save token failed")
+	}
+
+	return nil
+}
+
+func (p AuthRepository) FetchBackUpCodesByUserID(userID int) ([]*models.BackUpCode, error) {
+	codes := make([]*models.BackUpCode, 0)
+
+	if err := p.Conn.Table("back_up_codes").
+		Where("user_id = ?", userID).
+		Find(&codes).Error; err != nil {
+			return nil, errors.New("code not found")
+	}
+
+	return codes, nil
+}
+
 func NewPgsqlAuthRepository(conn *gorm.DB) auth.Repository {
-	return &PgsqlAuthRepository{
+	return &AuthRepository{
 		Conn: conn,
 	}
 }

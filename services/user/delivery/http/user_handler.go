@@ -24,19 +24,71 @@ func NewUserHandler(r *mux.Router, userService user.Service) {
 
 	v1 := r.PathPrefix("/me").Subrouter()
 
-	v1.Handle("", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.GetInfo)))).Methods(http.MethodGet)
-	v1.Handle("", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.UpdateBasicInfo)))).Methods(http.MethodPost)
-	v1.Handle("/email", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.GetEmailAddress)))).Methods(http.MethodGet)
-	v1.Handle("/email", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.UpdateEmailAddress)))).Methods(http.MethodPost)
-	v1.Handle("/password", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.ChangePassword)))).Methods(http.MethodPost)
-	v1.Handle("/picture", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.SetProfilePicture)))).Methods(http.MethodPost)
-	v1.Handle("/picture", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.DeleteProfilePicture)))).Methods(http.MethodDelete)
-	v1.Handle("/tfa", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.TwoFactorAuthenticationStatus)))).Methods(http.MethodGet)
-	v1.Handle("/tfa/enroll", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.TwoFactorAuthenticationSetup)))).Methods(http.MethodGet)
-	v1.Handle("/tfa/enroll", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.ActivateTwoFactorAuthentication)))).Methods(http.MethodPost)
-	v1.Handle("/tfa/remove", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.RemoveTwoFactorAuthentication)))).Methods(http.MethodPost)
-	v1.Handle("/events", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.ListEventData)))).Methods(http.MethodGet)
-	v1.Handle("/delete", handlers.LoggingHandler(os.Stdout, middleware.JwtAuthentication(http.HandlerFunc(handler.DeleteAccount)))).Methods(http.MethodPost)
+	v1.Handle("", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.GetInfo))))).
+		Methods(http.MethodGet)
+	v1.Handle("", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.UpdateBasicInfo))))).
+		Methods(http.MethodPost)
+	v1.Handle("/email", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.GetEmailAddress))))).
+		Methods(http.MethodGet)
+	v1.Handle("/email", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.UpdateEmailAddress))))).
+		Methods(http.MethodPost)
+	v1.Handle("/password", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.ChangePassword))))).
+		Methods(http.MethodPost)
+	v1.Handle("/picture", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.SetProfilePicture))))).
+		Methods(http.MethodPost)
+	v1.Handle("/picture", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.DeleteProfilePicture))))).
+		Methods(http.MethodDelete)
+	v1.Handle("/tfa", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.TwoFactorAuthenticationStatus))))).
+		Methods(http.MethodGet)
+	v1.Handle("/tfa/enroll", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.TwoFactorAuthenticationSetup))))).
+		Methods(http.MethodGet)
+	v1.Handle("/tfa/enroll", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.ActivateTwoFactorAuthentication))))).
+		Methods(http.MethodPost)
+	v1.Handle("/tfa/remove", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.RemoveTwoFactorAuthentication))))).
+		Methods(http.MethodPost)
+	v1.Handle("/events", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.ListEventData))))).
+		Methods(http.MethodGet)
+	v1.Handle("/delete", handlers.LoggingHandler(
+		os.Stdout,
+		middleware.JwtAuthentication(
+			middleware.TwoFactorAuthentication(http.HandlerFunc(handler.DeleteAccount))))).
+		Methods(http.MethodPost)
 }
 
 func (u *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {

@@ -205,7 +205,7 @@ func (u UserService) ActivateTwoFactorAuthentication(id int, tfa *models.Activat
 	}
 
 	backUpCodes := make([]string, 0)
-	backUpCodes = append(backUpCodes, helper.GenerateSecretCode(16), helper.GenerateSecretCode(16))
+	backUpCodes = append(backUpCodes, helper.GenerateSecretCode(12), helper.GenerateSecretCode(12))
 	if err := u.UserRepository.CreateBackUpCode(id, backUpCodes); err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}

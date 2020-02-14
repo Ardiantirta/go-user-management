@@ -8,7 +8,7 @@ type Service interface {
 	SendVerificationCode(params map[string]interface{}) (map[string]interface{}, error)
 	Login(email, password string) (map[string]interface{}, error)
 	TwoFactorAuthVerify(id int, code string) (map[string]interface{}, error)
-	TwoFactorAuthByPass() (map[string]interface{}, error)
+	TwoFactorAuthByPass(id int, code string) (map[string]interface{}, error)
 	ForgotPassword(email string) (map[string]interface{}, error)
 	ResetPassword(email, password string) (map[string]interface{}, error)
 }

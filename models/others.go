@@ -9,6 +9,7 @@ type CustomClaims struct {
 	ID    int    `json:"id"`
 	Email string `json:"email"`
 	IsTFA bool `json:"is_tfa"`
+	Code string `json:"code"`
 	jwt.StandardClaims
 }
 

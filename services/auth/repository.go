@@ -11,5 +11,7 @@ type Repository interface {
 	ResetPassword(email, password string) (map[string]interface{}, error)
 
 	FetchUserByID(id int) (*models.User, error)
-	FetchUserToken(userId int) (*models.UserToken, error)
+	FetchUserTokenByUserID(userId int) (*models.UserToken, error)
+	SaveUserToken(token *models.UserToken) error
+	FetchBackUpCodesByUserID(userID int) ([]*models.BackUpCode, error)
 }
