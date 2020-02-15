@@ -30,7 +30,7 @@ func JwtAuthentication(next http.Handler) http.Handler {
 		tokenString := r.Header.Get("Authorization")
 
 		if len(tokenString) == 0 {
-			response = map[string]interface{}{"code": 0, "message": "missing auth token"}
+			response = helper.ErrorMessage(0, "missing auth token")
 			w.WriteHeader(http.StatusUnauthorized)
 			helper.Response(w, response)
 			return
@@ -84,7 +84,7 @@ func TwoFactorAuthentication(next http.Handler) http.Handler {
 		isTfa, err := strconv.ParseBool(r.Header.Get("is_tfa"))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			helper.Response(w, helper.ErrorMessage(0, "something is missing, please re-login"))
+			helper.Response(w, helper.ErrorMessage(0, "something is missing, try re-login"))
 			return
 		}
 

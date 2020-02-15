@@ -21,7 +21,7 @@ func (u UserService) GetInfo(id int) (map[string]interface{}, error) {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
-	createdAt := currentUser.CreatedAt.Format("2006-01-02T15:04:05Z")
+	createdAt := currentUser.CreatedAt.Format(helper.FormatRFC8601)
 
 	return map[string]interface{}{
 		"user": map[string]interface{}{
@@ -117,15 +117,20 @@ func (u UserService) ChangePassword(id int, password string) (map[string]interfa
 	}, nil
 }
 
-func (u UserService) SetProfilePicture(id int) (map[string]interface{}, error) {
+func (u UserService) SetProfilePicture(id int, link string) (map[string]interface{}, error) {
 	currentUser, err := u.UserRepository.FetchUserByID(id)
 	if err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
+	currentUser.Picture = link
+
+	if err := u.UserRepository.SaveUser(currentUser); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
 	return map[string]interface{}{
 		"status": true,
-		"user": currentUser,
 	}, nil
 }
 
@@ -135,9 +140,14 @@ func (u UserService) DeleteProfilePicture(id int) (map[string]interface{}, error
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
+	currentUser.Picture = ""
+
+	if err := u.UserRepository.SaveUser(currentUser); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
 	return map[string]interface{}{
 		"status": true,
-		"user": currentUser,
 	}, nil
 }
 
@@ -150,7 +160,7 @@ func (u UserService) TwoFactorAuthenticationStatus(id int) (map[string]interface
 	enabled := false
 	if currentUser.IsTFA == 1 {
 		enabled = true
-		enabledAt := currentUser.TFAActivation.Format("2006-01-02T15:04:05Z")
+		enabledAt := currentUser.TFAActivation.Format(helper.FormatRFC8601)
 		return map[string]interface{}{
 			"enabled": enabled,
 			"enabled_at": enabledAt,
@@ -171,10 +181,11 @@ func (u UserService) TwoFactorAuthenticationSetup(id int) (map[string]interface{
 	}
 
 	secretCode := helper.GenerateSecretCode(20)
-	qrCode := helper.GenerateQRCode(secretCode)
+	TFACode := helper.GenerateTFACode(6)
+	qrCode := helper.GenerateQRCode(TFACode)
 
 	currentUser.SecretCode = secretCode
-	currentUser.QRCode = qrCode
+	currentUser.TFACode = TFACode
 	if err := u.UserRepository.SaveUser(currentUser); err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
@@ -192,12 +203,17 @@ func (u UserService) ActivateTwoFactorAuthentication(id int, tfa *models.Activat
 	}
 
 	if currentUser.SecretCode != tfa.Secret {
-		return helper.ErrorMessage(0, "wrong secret_code"), errors.New("wrong secret_code")
+		err := errors.New("wrong secret_code")
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if currentUser.TFACode != tfa.Code {
+		err := errors.New("wrong code")
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	now := time.Now().UTC()
 
-	currentUser.TFACode = tfa.Code
 	currentUser.IsTFA = 1
 	currentUser.TFAActivation = &now
 	if err := u.UserRepository.SaveUser(currentUser); err != nil {
@@ -224,13 +240,12 @@ func (u UserService) RemoveTwoFactorAuthentication(id int, password string) (map
 	currentUser.TFAActivation = nil
 	currentUser.IsTFA = 0
 	currentUser.SecretCode = ""
-	currentUser.QRCode = ""
 	currentUser.TFACode = ""
 	if err := u.UserRepository.SaveUser(currentUser); err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
-	if err := u.UserRepository.DeleteBackUpCode(id); err != nil {
+	if err := u.UserRepository.DeleteBackUpCodes(id); err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
@@ -257,10 +272,102 @@ func (u UserService) DeleteAccount(id int, password string) (map[string]interfac
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
+	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.Password), []byte(password)); err != nil {
+		return helper.ErrorMessage(0, "password didn't match"), err
+	}
+
+	if err := u.UserRepository.DeleteUser(currentUser); err != nil {
+		return helper.ErrorMessage(0,  err.Error()), err
+	}
+
+	if err := u.UserRepository.DeleteBackUpCodes(id); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if err := u.UserRepository.DeleteUserToken(id); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
 	return map[string]interface{}{
 		"status": true,
-		"user": currentUser,
 	}, nil
+}
+
+func (u UserService) SessionLists(id int) (map[string]interface{}, error) {
+	panic("implement me")
+}
+
+func (u UserService) DeleteSession(id int, currentToken string) (map[string]interface{}, error) {
+	_, err := u.UserRepository.FetchUserByID(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if err := u.UserRepository.DeleteUserTokenByToken(id, currentToken); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	return map[string]interface{}{
+		"status": true,
+	}, nil
+}
+
+func (u UserService) DeleteOtherSessions(id int, currentToken string) (map[string]interface{}, error) {
+	_, err := u.UserRepository.FetchUserByID(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if err := u.UserRepository.DeleteUserToken(id); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if err := u.UserRepository.CreateNewToken(id, currentToken); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	return map[string]interface{}{
+		"status": true,
+	}, nil
+}
+
+func (u UserService) RefreshToken(id int) (map[string]interface{}, error) {
+	currentUser, err := u.UserRepository.FetchUserByID(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	newUserToken := helper.RefreshToken(currentUser)
+
+	expiredAtStr := newUserToken.DeletedAt.Format(helper.FormatRFC8601)
+
+	return map[string]interface{}{
+		"access_token": map[string]interface{} {
+			"value": newUserToken.Token,
+			"type": newUserToken.Type,
+			"expired_at": expiredAtStr,
+		},
+	}, nil
+}
+
+func (u UserService) NewAccessToken(id int) (map[string]interface{}, error) {
+	_, err := u.UserRepository.FetchUserByID(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	res, err := u.RefreshToken(id)
+	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	newToken := res["access_token"].(map[string]interface{})["value"].(string)
+
+	if err := u.UserRepository.CreateNewToken(id, newToken); err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	return res, nil
 }
 
 func NewUserService(userRepository user.Repository) user.Service {

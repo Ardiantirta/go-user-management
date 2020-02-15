@@ -19,7 +19,7 @@ type AuthService struct {
 func (a *AuthService) Register(req *models.RegisterForm) (map[string]interface{}, error) {
 	user, verificationCode, err := a.AuthRepository.Register(req)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	sg := new(models.SendGridEmail)
@@ -29,7 +29,7 @@ func (a *AuthService) Register(req *models.RegisterForm) (map[string]interface{}
 	sg.PlainContent = "Please verify your email"
 	sg.HtmlContent = fmt.Sprintf(`<a href="http://localhost:3000/auth/verification/%s">email verification</a>`, verificationCode.Code)
 	if err := helper.SendVerificationByEmail(sg); err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	//go func() {
@@ -43,7 +43,7 @@ func (a *AuthService) Register(req *models.RegisterForm) (map[string]interface{}
 func (a *AuthService) Verification(params map[string]interface{}) (map[string]interface{}, error) {
 	err := a.AuthRepository.Verification(params)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	mapResponse := map[string]interface{}{"status": true}
@@ -56,7 +56,7 @@ func (a *AuthService) SendVerificationCode(params map[string]interface{}) (map[s
 
 	user, verificationCode, err := a.AuthRepository.SendVerificationCode(recipient)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	sg := new(models.SendGridEmail)
@@ -71,7 +71,7 @@ func (a *AuthService) SendVerificationCode(params map[string]interface{}) (map[s
 	sg.PlainContent = "Please verify your email"
 	sg.HtmlContent = fmt.Sprintf(`<a href="http://localhost:3000/auth/verification/%s">verify here</a>`, verificationCode)
 	if err := helper.SendVerificationByEmail(sg); err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	return map[string]interface{}{"status": true}, nil
@@ -80,7 +80,7 @@ func (a *AuthService) SendVerificationCode(params map[string]interface{}) (map[s
 func (a *AuthService) Login(email, password string) (map[string]interface{}, error) {
 	response, err := a.AuthRepository.Login(email, password)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	return response, nil
@@ -126,7 +126,7 @@ func (a *AuthService) TwoFactorAuthVerify(id int, code string) (map[string]inter
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
-	expiredAtStr := expiredAt.Format("2006-01-02T15:04:05Z")
+	expiredAtStr := expiredAt.Format(helper.FormatRFC8601)
 
 	return map[string]interface{}{
 		"access_token": map[string]interface{} {
@@ -190,7 +190,7 @@ func (a *AuthService) TwoFactorAuthByPass(id int, code string) (map[string]inter
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
-	expiredAtStr := expiredAt.Format("2006-01-02T15:04:05Z")
+	expiredAtStr := expiredAt.Format(helper.FormatRFC8601)
 
 	return map[string]interface{}{
 		"access_token": map[string]interface{} {
@@ -204,7 +204,7 @@ func (a *AuthService) TwoFactorAuthByPass(id int, code string) (map[string]inter
 func (a *AuthService) ForgotPassword(email string) (map[string]interface{}, error) {
 	user, token, err := a.AuthRepository.ForgotPassword(email)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	sg := new(models.SendGridEmail)
@@ -214,7 +214,7 @@ func (a *AuthService) ForgotPassword(email string) (map[string]interface{}, erro
 	sg.PlainContent = "here is you reset password token"
 	sg.HtmlContent = token
 	if err := helper.SendVerificationByEmail(sg); err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	//go func() {
@@ -228,7 +228,7 @@ func (a *AuthService) ForgotPassword(email string) (map[string]interface{}, erro
 func (a *AuthService) ResetPassword(email, password string) (map[string]interface{}, error) {
 	response, err := a.AuthRepository.ResetPassword(email, password)
 	if err != nil {
-		return map[string]interface{}{"code": 0, "message": err.Error()}, err
+		return helper.ErrorMessage(0, err.Error()), err
 	}
 
 	return response, nil

@@ -24,19 +24,19 @@ func (p AuthRepository) Validate(req *models.RegisterForm) (map[string]interface
 	validate := validator.New()
 
 	if err := validate.Var(req.FullName, "required,min=1,max=128"); err != nil {
-		return map[string]interface{}{"code": 0, "message": "full_name is required and must between 1 and 128 chars"}, false
+		return helper.ErrorMessage(0, "full_name is required and must between 1 and 128 chars"), false
 	}
 
 	if err := validate.Var(req.Email, "required,email,max=128"); err != nil {
-		return map[string]interface{}{"code": 0, "message": "email must be a valid email and not longer than 128 chars"}, false
+		return helper.ErrorMessage(0, "email must be a valid email and not longer than 128 chars"), false
 	}
 
 	if err := validate.Var(req.Password, "required,min=6,max=128"); err != nil {
-		return map[string]interface{}{"code": 0, "message": "password must between 6 and 128 chars"}, false
+		return helper.ErrorMessage(0, "password must between 6 and 128 chars"), false
 	}
 
 	if err := validate.VarWithValue(req.Password, req.PasswordConfirm, "eqfield"); err != nil {
-		return map[string]interface{}{"code": 0, "message": "password and password_confirm must be equal"}, false
+		return helper.ErrorMessage(0, "password and password_confirm must be equal"), false
 	}
 
 	temp := new(models.User)
@@ -44,11 +44,11 @@ func (p AuthRepository) Validate(req *models.RegisterForm) (map[string]interface
 	if err := p.Conn.Table("users").
 		Where("lower(email) = ?", strings.ToLower(req.Email)).
 		First(&temp).Error; err != nil && err != gorm.ErrRecordNotFound {
-		return map[string]interface{}{"code": 0, "message": "connection error. please retry"}, false
+		return helper.ErrorMessage(0, "connection error. please retry"), false
 	}
 
 	if temp.Email != "" {
-		return map[string]interface{}{"code": 0, "message": "email already exist"}, false
+		return helper.ErrorMessage(0, "email already exist"), false
 	}
 
 	return nil, true
@@ -184,7 +184,7 @@ func (p AuthRepository) Login(email, password string) (map[string]interface{}, e
 		return nil, errors.New("create token failed")
 	}
 
-	strExpiredAt := expiredAt.Format("2006-01-02T15:04:05Z")
+	strExpiredAt := expiredAt.Format(helper.FormatRFC8601)
 
 	return map[string]interface{}{
 		"require_tfa": isTfa,

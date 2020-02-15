@@ -53,7 +53,7 @@ func (u UserRepository) CreateVerificationCode(id int) (*models.UserVerification
 func (u UserRepository) CreateBackUpCode(id int, codes []string) error {
 	query := `insert into back_up_codes (user_id, code, created_at, updated_at) values `
 	countInsert := 0
-	createdAt := time.Now().Format("2006-01-02T15:04:05Z")
+	createdAt := time.Now().Format(helper.FormatRFC8601)
 	for _, c := range codes {
 		values := fmt.Sprintf("" +
 			"(%d, '%s', '%s', '%s'),",
@@ -66,33 +66,64 @@ func (u UserRepository) CreateBackUpCode(id int, codes []string) error {
 	if countInsert > 0 {
 		query = strings.TrimSuffix(query, ",")
 		if err := u.Conn.Exec(query).Error; err != nil {
-			return errors.New("create backup_codes failed")
+			return errors.New("failed to create backup_codes")
 		}
 	}
 
 	return nil
 }
 
-func (u UserRepository) DeleteBackUpCode(id int) error {
+func (u UserRepository) DeleteBackUpCodes(id int) error {
 	if err := u.Conn.Unscoped().Table("back_up_codes").
 		Where("user_id = ?", id).
 		Delete(models.BackUpCode{}).Error; err != nil {
-			return errors.New("delete backup_codes failed")
+			return errors.New("failed to delete backup_codes")
 	}
 
 	return nil
 }
 
 func (u UserRepository) DeleteUser(user *models.User) error {
-	panic("implement me")
+	if err := u.Conn.Unscoped().Delete(&user).Error; err != nil {
+		return errors.New("failed to delete user")
+	}
+
+	return nil
 }
 
-func (u UserRepository) DeleteUserToken(id int) error {
-	panic("implement me")
+func (u UserRepository) DeleteUserToken(userID int) error {
+	if err := u.Conn.Unscoped().Table("user_tokens").
+		Where("user_id = ?", userID).
+		Delete(models.UserToken{}).Error; err != nil {
+			return errors.New("failed to delete user token")
+	}
+
+	return nil
 }
 
-func (u UserRepository) DeleteBackUpCodes(id int) error {
-	panic("implement me")
+func (u UserRepository) DeleteUserTokenByToken(userID int, token string) error {
+	if err := u.Conn.Unscoped().Table("user_tokens").
+		Where("user_id = ?", userID).
+		Where("token = ?", token).
+		Delete(models.UserToken{}).Error; err != nil {
+			return errors.New("failed to delete user token")
+	}
+
+	return nil
+}
+
+func (u UserRepository) CreateNewToken(id int, newToken string) error {
+	token := new(models.UserToken)
+
+	token.Type = "Bearer"
+	token.UserID = id
+	token.Token = newToken
+
+	if err := u.Conn.Create(&token).Error; err != nil {
+		return errors.New("failed to create new token")
+	}
+
+	return nil
 }
 
 func NewUserRepository(conn *gorm.DB) user.Repository {

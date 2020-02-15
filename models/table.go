@@ -19,7 +19,6 @@ type User struct {
 	IsTFA         int       `json:"is_tfa"`
 	TFAActivation *time.Time `json:"tfa_activation"`
 	SecretCode string `json:"secret_code" gorm:"type:varchar(255)"`
-	QRCode string `json:"qr" gorm:"type:text"`
 	TFACode string `json:"tfa_code" gorm:"type:varchar(255)"`
 }
 

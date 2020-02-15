@@ -7,8 +7,9 @@ type Repository interface {
 	SaveUser(user *models.User) error
 	DeleteUser(user *models.User) error
 	DeleteUserToken(id int) error
+	DeleteUserTokenByToken(id int, token string) error
 	DeleteBackUpCodes(id int) error
 	CreateVerificationCode(id int) (*models.UserVerificationCode, error)
 	CreateBackUpCode(id int, codes []string) error
-	DeleteBackUpCode(id int) error
+	CreateNewToken(id int, newToken string) error
 }

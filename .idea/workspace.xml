@@ -2,27 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1ae2466f-d9a2-49db-bbb5-931b83019526" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/models/form.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/others.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/table.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/user/delivery/http/user_handler.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/user/repository/pgsql_user.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/user/service/user_service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/helper/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/helper/helper.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/middleware/auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/middleware/auth.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/user.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/table.go" beforeDir="false" afterPath="$PROJECT_DIR$/models/table.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/delivery/http/auth_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/delivery/http/auth_handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/auth/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/repository.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/repository/pgsql_auth.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/repository/pgsql_auth.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/auth/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/service.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/auth/service/auth_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/auth/service/auth_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/user/delivery/http/user_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/delivery/http/user_handler.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/user/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/user/repository/pgsql_user.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/repository/pgsql_user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/user/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup/database.go" beforeDir="false" afterPath="$PROJECT_DIR$/setup/database.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/user/service/user_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/user/service/user_service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,6 +79,10 @@
     <proxy>direct</proxy>
   </component>
   <component name="WindowStateProjectService">
+    <state x="426" y="51" key="#com.intellij.ide.util.MemberChooser" timestamp="1581774173879">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="426" y="51" key="#com.intellij.ide.util.MemberChooser/0.0.1280.680@0.0.1280.680" timestamp="1581774173879" />
     <state x="421" y="97" key="FileChooserDialogImpl" timestamp="1581489625486">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
@@ -96,15 +91,15 @@
       <screen x="0" y="0" width="1280" height="680" />
     </state>
     <state x="142" y="0" key="SettingsEditor/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581489816662" />
-    <state x="334" y="72" width="612" height="536" key="find.popup" timestamp="1581616549326">
+    <state x="334" y="72" width="612" height="536" key="find.popup" timestamp="1581785586756">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581579324296" />
-    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680@0.0.1280.680" timestamp="1581616549326" />
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup" timestamp="1581614379668">
+    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581656132616" />
+    <state x="334" y="72" width="612" height="536" key="find.popup/0.0.1280.680@0.0.1280.680" timestamp="1581785586756" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup" timestamp="1581782468948">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581589829555" />
-    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680@0.0.1280.680" timestamp="1581614379668" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680/1920.0.1366.728@0.0.1280.680" timestamp="1581653685575" />
+    <state x="303" y="1" width="672" height="678" key="search.everywhere.popup/0.0.1280.680@0.0.1280.680" timestamp="1581782468948" />
   </component>
 </project>

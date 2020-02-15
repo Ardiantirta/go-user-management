@@ -64,7 +64,7 @@ func (a *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "Invalid json body"})
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
 		return
 	}
 
@@ -82,7 +82,7 @@ func (a *AuthHandler) SendVerificationCode(w http.ResponseWriter, r *http.Reques
 
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "invalid json body"})
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
 		return
 	}
 
@@ -121,7 +121,7 @@ func (a *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&auth); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "Invalid json body"})
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
 	}
 
 	response, err := a.AuthService.Login(auth.Email, auth.Password)
@@ -137,7 +137,7 @@ func (a *AuthHandler) TwoFactorAuthVerify(w http.ResponseWriter, r *http.Request
 	id, err := strconv.Atoi(r.Header.Get("id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, helper.ErrorMessage(0, "something is missing, please re-login"))
+		helper.Response(w, helper.ErrorMessage(0, "something is missing, try re-login"))
 		return
 	}
 
@@ -168,7 +168,7 @@ func (a *AuthHandler) TwoFactorAuthByPass(w http.ResponseWriter, r *http.Request
 	id, err := strconv.Atoi(r.Header.Get("id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, helper.ErrorMessage(0, "something is missing, please re-login"))
+		helper.Response(w, helper.ErrorMessage(0, "something is missing, try re-login"))
 		return
 	}
 
@@ -198,7 +198,7 @@ func (a *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "invalid json body"})
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
 		return
 	}
 
@@ -216,26 +216,26 @@ func (a *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "invalid json body"})
+		helper.Response(w, helper.ErrorMessage(0, "invalid json body"))
 		return
 	}
 
 	if len(formData.Password) < 6 || len(formData.Password) > 128 {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "password length must between 6 and 128 chars"})
+		helper.Response(w, helper.ErrorMessage(0, "password length must between 6 and 128 chars"))
 		return
 	}
 
 	if formData.Password != formData.PasswordConfirm {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "password and password_confirm must be equal"})
+		helper.Response(w, helper.ErrorMessage(0, "password and password_confirm must be equal"))
 		return
 	}
 
 	claims, err := middleware.VerifyToken(formData.Token)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		helper.Response(w, map[string]interface{}{"code": 0, "message": "token is invalid"})
+		helper.Response(w, helper.ErrorMessage(0, "token is invalid"))
 		return
 	}
 
