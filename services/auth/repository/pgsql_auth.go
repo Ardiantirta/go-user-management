@@ -277,7 +277,7 @@ func (p AuthRepository) FetchUserTokenByUserID(userId int) (*models.UserToken, e
 
 func (p AuthRepository) SaveUserToken(token *models.UserToken) error {
 	if err := p.Conn.Table("user_tokens").
-		Where("user_id = ?", token.ID).
+		Where("user_id = ?", token.UserID).
 		Save(&token).Error; err != nil {
 			return errors.New("save token failed")
 	}

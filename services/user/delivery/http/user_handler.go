@@ -452,7 +452,9 @@ func (u *UserHandler) NewAccessToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := u.UserService.NewAccessToken(id)
+	tokenString := strings.Replace(r.Header.Get("Authorization"), "Bearer ", "", 1)
+
+	response, err := u.UserService.NewAccessToken(id, tokenString)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}

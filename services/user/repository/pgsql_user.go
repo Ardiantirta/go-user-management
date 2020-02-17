@@ -109,6 +109,8 @@ func (u UserRepository) DeleteUserTokenByToken(userID int, token string) error {
 			return errors.New("failed to delete user token")
 	}
 
+	fmt.Println(userID, token)
+
 	return nil
 }
 
@@ -121,6 +123,19 @@ func (u UserRepository) CreateNewToken(id int, newToken string) error {
 
 	if err := u.Conn.Create(&token).Error; err != nil {
 		return errors.New("failed to create new token")
+	}
+
+	return nil
+}
+
+func (u UserRepository) CheckToken(id int, token string) error {
+	userToken := new(models.UserToken)
+
+	if err := u.Conn.Table("user_tokens").
+		Where("user_id = ?", id).
+		Where("token = ?", token).
+		First(&userToken).Error; err != nil {
+			return errors.New("user token not found")
 	}
 
 	return nil

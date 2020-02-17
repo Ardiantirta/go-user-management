@@ -20,5 +20,5 @@ type Service interface {
 	DeleteSession(id int, currentToken string) (map[string]interface{}, error)
 	DeleteOtherSessions(id int, currentToken string) (map[string]interface{}, error)
 	RefreshToken(id int) (map[string]interface{}, error)
-	NewAccessToken(id int) (map[string]interface{}, error)
+	NewAccessToken(id int, oldToken string) (map[string]interface{}, error)
 }

@@ -12,4 +12,5 @@ type Repository interface {
 	CreateVerificationCode(id int) (*models.UserVerificationCode, error)
 	CreateBackUpCode(id int, codes []string) error
 	CreateNewToken(id int, newToken string) error
+	CheckToken(id int, token string) error
 }

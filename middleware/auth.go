@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/ardiantirta/go-user-management/setup"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/ardiantirta/go-user-management/helper"
+
+	_userRepository "github.com/ardiantirta/go-user-management/services/user/repository"
 )
 
 func VerifyToken(tokenString string) (jwt.Claims, error) {
@@ -48,6 +51,14 @@ func JwtAuthentication(next http.Handler) http.Handler {
 		email := claims.(jwt.MapClaims)["email"].(string)
 		isTFA := claims.(jwt.MapClaims)["is_tfa"].(bool)
 		code := claims.(jwt.MapClaims)["code"].(string)
+
+		gClient := setup.DBConnection()
+		u := _userRepository.NewUserRepository(gClient)
+		if err := u.CheckToken(int(id), tokenString); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			helper.Response(w, helper.ErrorMessage(0, err.Error()))
+			return
+		}
 
 		r.Header.Set("id", strconv.Itoa(int(id)))
 		r.Header.Set("email", email)

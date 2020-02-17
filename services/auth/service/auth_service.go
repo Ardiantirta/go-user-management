@@ -113,7 +113,7 @@ func (a *AuthService) TwoFactorAuthVerify(id int, code string) (map[string]inter
 		ID:    int(currentUser.ID),
 		Email: currentUser.Email,
 		IsTFA: isTfa,
-		Code: currentUser.TFACode,
+		Code: code,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredAt.Unix(),
 		},

@@ -350,9 +350,13 @@ func (u UserService) RefreshToken(id int) (map[string]interface{}, error) {
 	}, nil
 }
 
-func (u UserService) NewAccessToken(id int) (map[string]interface{}, error) {
+func (u UserService) NewAccessToken(id int, oldToken string) (map[string]interface{}, error) {
 	_, err := u.UserRepository.FetchUserByID(id)
 	if err != nil {
+		return helper.ErrorMessage(0, err.Error()), err
+	}
+
+	if err := u.UserRepository.DeleteUserTokenByToken(id, oldToken); err != nil {
 		return helper.ErrorMessage(0, err.Error()), err
 	}
 
