@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ardiantirta/go-user-management/models"
 	"net/http"
 	"os"
 
@@ -41,6 +42,13 @@ func main() {
 			logrus.Error(err)
 		}
 	}()
+
+	dbConn.Debug().AutoMigrate(
+		&models.User{},
+		&models.UserVerificationCode{},
+		&models.UserToken{},
+		&models.BackUpCode{},
+	)
 
 	r := mux.NewRouter()
 

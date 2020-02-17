@@ -2,7 +2,6 @@ package setup
 
 import (
 	"fmt"
-	"github.com/ardiantirta/go-user-management/models"
 	"net/url"
 
 	"github.com/jinzhu/gorm"
@@ -27,13 +26,6 @@ func DBConnection() *gorm.DB {
 	if err != nil {
 		logrus.Error(err)
 	}
-
-	dbConn.Debug().AutoMigrate(
-		&models.User{},
-		&models.UserVerificationCode{},
-		&models.UserToken{},
-		&models.BackUpCode{},
-	)
 
 	return dbConn
 }
